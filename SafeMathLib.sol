@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 library SafeMathLib{
 
-    function times(uint64 a, uint64 b) returns (uint64){
+    function times(uint64 a, uint64 b) public pure returns (uint64){
 
         uint64 c = a*b; 
 
@@ -14,7 +14,7 @@ library SafeMathLib{
 
     }
 
-    function minus(uint64 a, uint64 b ) returns (uint64) {
+    function minus(uint64 a, uint64 b ) public pure returns (uint64) {
 
 
         assert(b<=a);
@@ -23,7 +23,7 @@ library SafeMathLib{
 
     }
 
-    function plus(uint64 a, uint64 b) returns (uint64){
+    function plus(uint64 a, uint64 b) public pure returns (uint64){
 
         uint64 c= a+b; 
         assert(c>=a && c>=b) ;
@@ -31,7 +31,7 @@ library SafeMathLib{
 
     }
 
-    function divided(uint64 a, uint64 b) returns (uint64) {
+    function divided(uint64 a, uint64 b) public pure returns (uint64) {
         require(b > 0);
         uint64 c = a / b;
         return c;
