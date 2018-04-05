@@ -1,6 +1,6 @@
+<<<<<<< HEAD
 pragma solidity 0.4.21;
 pragma experimental ABIEncoderV2; 
-
 
 // ----------------------------------------------------------------------------
 // ERC Token Standard #20 Interface
