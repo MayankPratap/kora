@@ -1,6 +1,7 @@
-<<<<<<< HEAD
 pragma solidity 0.4.21;
 pragma experimental ABIEncoderV2; 
+
+import "./SafeMathLib.sol";
 
 // ----------------------------------------------------------------------------
 // ERC Token Standard #20 Interface
@@ -8,14 +9,14 @@ pragma experimental ABIEncoderV2;
 // ----------------------------------------------------------------------------
 contract ERC20Interface {
 
-    function totalSupply() constant returns (uint64 supply) {}
-    function balanceOf(address _owner) constant returns (uint64 balance) {}
-    function transfer(address _to, uint64 _value) returns (bool success) {}
-    function transferFrom(address _from, address _to, uint64 _value) returns (bool success) {}
-    function approve(address _spender, uint64 _value) returns (bool success) {}
-    function allowance(address _owner, address _spender) constant returns (uint64 remaining) {}
-    event Transfer(address indexed _from, address indexed _to, uint64 _value);
-    event Approval(address indexed _owner, address indexed _spender, uint64 _value);
+    function totalSupply() public view returns (uint256 supply) {}
+    function balanceOf(address _owner) public view returns (uint256 balance) {}
+    function transfer(address _to, uint256 _value) public returns (bool success) {}
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {}
+    function approve(address _spender, uint256 _value) public returns (bool success) {}
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {}
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }
 
 
@@ -28,7 +29,7 @@ contract ERC20Interface {
 // ----------------------------------------------------------------------------
 contract coin is ERC20Interface {
    
-    using SafeMathLib for uint64; 
+    using SafeMathLib for uint256; 
 
     address owner; 
     bytes32 public symbol;
@@ -44,9 +45,10 @@ contract coin is ERC20Interface {
     uint64 public LDVA;
 
     struct ans_instance {
-        uint8 reaction;
+        
         uint16 upvotes;
         uint16 downvotes;
+        uint8 reaction;
         bytes32 ansId;
     }
 
@@ -166,7 +168,7 @@ contract coin is ERC20Interface {
 
         totalSupply = 10000000000000000;
         users[msg.sender].coins=totalSupply;     // Give all initial token to contract creator
-        Transfer(address(0), msg.sender, totalSupply);
+        emit Transfer(address(0), msg.sender, totalSupply);
         
     }
 
@@ -174,7 +176,7 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Total supply
     // ------------------------------------------------------------------------
-    function totalSupply() public constant returns (uint64) {
+    function totalSupply() public view returns (uint256) {
         return totalSupply  - users[address(0)].coins;
     }
 
@@ -182,7 +184,7 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Get the token balance for account tokenOwner
     // ------------------------------------------------------------------------
-    function balanceOf(address tokenOwner) constant returns (uint64 balance) {
+    function balanceOf(address tokenOwner) public view returns (uint256 balance) {
         return users[tokenOwner].coins;
     }
 
@@ -192,18 +194,18 @@ contract coin is ERC20Interface {
     // - Owner's account must have sufficient balance to transfer
     // - 0 value transfers are allowed
     // ------------------------------------------------------------------------
-    function transfer(address to, uint64 tokens) public returns (bool success) {
+    function transfer(address to, uint256 tokens) public returns (bool success) {
+
+        tokens=uint64(tokens);
+
         if(users[msg.sender].coins >= tokens && tokens> 0){
-            users[msg.sender].coins = users[msg.sender].coins.minus(tokens);
-            users[to].coins = users[to].coins.plus(tokens);
-            Transfer(msg.sender, to, tokens);
+            users[msg.sender].coins = uint64(users[msg.sender].coins.sub(tokens));
+            users[to].coins = uint64(users[to].coins.add(tokens));
+            emit Transfer(msg.sender, to, tokens);
             return true;
         }else {
-
             return false;
-
         }
-
     }
 
 
@@ -215,7 +217,7 @@ contract coin is ERC20Interface {
     // recommends that there are no checks for the approval double-spend attack
     // as this should be implemented in user interfaces 
     // ------------------------------------------------------------------------
-    function approve(address spender, uint64 tokens) public returns (bool success) {
+    function approve(address spender, uint256 tokens) public returns (bool success) {
         allowed[msg.sender][spender] = tokens;
         Approval(msg.sender, spender, tokens);
         return true;
@@ -231,11 +233,11 @@ contract coin is ERC20Interface {
     // - Spender must have sufficient allowance to transfer
     // - 0 value transfers are allowed
     // ------------------------------------------------------------------------
-    function transferFrom(address from, address to, uint64 tokens) public returns (bool success) {
-        users[from].coins = users[from].coins.minus(tokens);
-        allowed[from][msg.sender] = allowed[from][msg.sender].minus(tokens);
-        users[to].coins = users[to].coins.plus(tokens);
-        Transfer(from, to, tokens);
+    function transferFrom(address from, address to, uint256 tokens) public returns (bool success) {
+        users[from].coins = uint64(users[from].coins.sub(tokens));
+        allowed[from][msg.sender] = uint64(allowed[from][msg.sender].sub(tokens));
+        users[to].coins = uint64(users[to].coins.add(tokens));
+        emit Transfer(from, to, tokens);
         return true;
     }
 
@@ -244,7 +246,7 @@ contract coin is ERC20Interface {
     // Returns the amount of tokens approved by the owner that can be
     // transferred to the spender's account
     // ------------------------------------------------------------------------
-    function allowance(address tokenOwner, address spender) constant returns (uint64 remaining) {
+    function allowance(address tokenOwner, address spender) public view returns (uint256 remaining) {
         return allowed[tokenOwner][spender];
     }
 
@@ -267,14 +269,14 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Owner can transfer out any accidentally sent ERC20 tokens
     // ------------------------------------------------------------------------
-    function transferAnyERC20Token(address tokenAddress, uint64 tokens) public returns (bool success) {
+    function transferAnyERC20Token(address tokenAddress, uint256 tokens) public returns (bool success) {
         
         require(msg.sender == owner);
         return ERC20Interface(tokenAddress).transfer(owner, tokens);
     }
 
     function valueAddition (uint8 work, uint8 ipower) internal returns(uint64 va)  {
-        return uint64(work).times(uint64(ipower));
+        return uint64(work.mul(ipower));
     }
 
     
@@ -283,18 +285,18 @@ contract coin is ERC20Interface {
    function VAU(address user, uint8 work) internal returns(uint64){
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
-        uint64 num = offset.times(valueAddition(work, users[user].ipower).times(cp)); 
-        uint64 vau = num.divided(totalCoinPower);
+        uint64 num = uint64(offset.mul(valueAddition(work, users[user].ipower).mul(cp))); 
+        uint64 vau = uint64(num.div(totalCoinPower));
         users[user].vau += vau; 
         return vau;
     }
     
-    function VAU2(address user, uint16 diff) internal returns(uint64){ 
+    function VAU2(address user, uint16 diff) internal returns(uint256){ 
         
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
-        uint64 num = offset.times(uint64(diff).divided(10).times(cp)); 
-        uint64 vau = num.divided(totalCoinPower);
+        uint64 num = uint64(offset.mul(uint256(diff).div(10).mul(cp))); 
+        uint64 vau = uint64(num.div(totalCoinPower));
         users[user].vau += vau; 
         TVA += vau; 
         return vau;
@@ -302,12 +304,12 @@ contract coin is ERC20Interface {
         
     }
     
-    function diffInWeeks(uint64 time1, uint64 time2) private returns (uint32) {
+    function diffInWeeks(uint64 time1, uint64 time2) private returns (uint64) {
         
         uint64 diff = time2 - time1;   // diff is in milliseconds
         require(diff>0);
         
-        uint32 weeksDiff = uint32(diff.divided(1000*84600*7));  
+        uint64 weeksDiff = uint64(diff.div(1000*84600*7));  
           
         return weeksDiff;     
         
@@ -317,7 +319,7 @@ contract coin is ERC20Interface {
 
     function TVAupdate(address user, uint8 work) private returns(uint64){
         uint64 val=VAU(user, work);
-        TVA += val;
+        TVA = uint64(TVA.add(val));
         return val; 
     }
 
@@ -332,7 +334,7 @@ contract coin is ERC20Interface {
         uint i;   // iterator
         for(i=0; i<rd.length; i++)
         {
-            coins += rd[i].amount.times(uint64(diffInWeeks(rd[i].time_of_redeem, uint64(now))).divided(rd[i].span_over_weeks));
+            coins += uint64(rd[i].amount.mul(diffInWeeks(rd[i].time_of_redeem, now).div(rd[i].span_over_weeks)));
         }
         users[banda].coinPower -= coins;
         totalCoinPower -= coins;
@@ -373,8 +375,8 @@ contract coin is ERC20Interface {
     }
 
      function coinRelease () view internal returns(uint64 coins) {
-        uint64 activity_change = LDCR.times(totalSupply).times(TVA-LDVA).divided(LDVA).plus(LDCR.times(totalSupply));
-        uint64 vad = activity_change.divided(1000000000000000);
+        uint64 activity_change = uint64(LDCR.mul(totalSupply).mul(TVA-LDVA).div(LDVA).add(LDCR.mul(totalSupply)));
+        uint64 vad = uint64(activity_change.div(1000000000000000));
         if(vad >= 10000000000 ){
             
             return 10000000000;
@@ -390,9 +392,9 @@ contract coin is ERC20Interface {
 
       function power_up (uint64 coins) public returns(bool res) {
         if(users[msg.sender].coins >= coins){
-            users[msg.sender].coins = users[msg.sender].coins.minus(coins);
-            users[msg.sender].coinPower = users[msg.sender].coinPower.plus(coins);
-            totalCoinPower = totalCoinPower.plus(coins);
+            users[msg.sender].coins = uint64(users[msg.sender].coins.sub(coins));
+            users[msg.sender].coinPower = uint64(users[msg.sender].coinPower.add(coins));
+            totalCoinPower = uint64(totalCoinPower.add(coins));
             return true;
         }
         else
@@ -519,7 +521,7 @@ contract coin is ERC20Interface {
         require(question.author == msg.sender);   // If msg.sender is the author of this question 
 
         question.que_hash = _hash;
-        question.lastModificationTimestamp = uint64(now); 
+        question.lastModificationTimestamp = uint256(now); 
     }
 
     function updateAnswer(bytes32 _queId, bytes32 _ansId, bytes32 _hash) public{
@@ -547,7 +549,18 @@ contract coin is ERC20Interface {
 
     }
     
-    
+    function add(uint256 first,uint256 second) public view returns (uint256){
+
+        return first.add(second);
+
+    }
+
+    function identity(uint256 first) public constant returns (uint256){
+        
+        return first;
+        
+    }
 
 
 }
+
