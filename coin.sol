@@ -139,7 +139,7 @@ contract coin is ERC20Interface {
     // 3- upvote
     // 4- downvote
     // 5- follow
-    mapping(uint8 => uint8) public work;
+    mapping(uint8 => uint8) public work_done;
    
     
     mapping(address => mapping(address => uint64)) allowed;
@@ -158,11 +158,11 @@ contract coin is ERC20Interface {
         LDCR = 10**9;
         LDVA = 10**4; 
         
-        work[1] = 20;
-        work[2] = 10;
-        work[3] = 1;
-        work[4] = 1;
-        work[5] = 1;
+        work_done[1] = 20;
+        work_done[2] = 10;
+        work_done[3] = 1;
+        work_done[4] = 1;
+        work_done[5] = 1;
         
         
 
@@ -427,7 +427,7 @@ contract coin is ERC20Interface {
 
         require(users[msg.sender].answersReacted[ansId].reaction == 0 ); 
 
-        ans.vaa += TVAupdate(msg.sender, work[reaction]);
+        ans.vaa += TVAupdate(msg.sender, work_done[reaction]);
 
         if(reaction == 3)
             ans.upvotes++;
@@ -472,7 +472,7 @@ contract coin is ERC20Interface {
 
         questionsIndex.push(_hash);
         questions[_hash]=q; 
-        TVAupdate(msg.sender, work[2]); 
+        TVAupdate(msg.sender, work_done[2]); 
         
     }
 
@@ -496,7 +496,7 @@ contract coin is ERC20Interface {
         allAnswers.push(answer);
         answerMapping[_hash]=answer; 
         
-        TVAupdate(msg.sender, work[1]);
+        TVAupdate(msg.sender, work_done[1]);
         
         
 
