@@ -9,12 +9,12 @@ import "./SafeMathLib.sol";
 // ----------------------------------------------------------------------------
 contract ERC20Interface {
 
-    function totalSupply() public view returns (uint256 supply) {}
-    function balanceOf(address _owner) public view returns (uint256 balance) {}
-    function transfer(address _to, uint256 _value) public returns (bool success) {}
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {}
-    function approve(address _spender, uint256 _value) public returns (bool success) {}
-    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {}
+    function totalSupply() public view returns (uint256) {}
+    function balanceOf(address) public view returns (uint256) {}
+    function transfer(address, uint256) public returns (bool) {}
+    function transferFrom(address, address, uint256) public returns (bool) {}
+    function approve(address, uint256) public returns (bool) {}
+    function allowance(address, address) public view returns (uint256) {}
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }
@@ -29,9 +29,9 @@ contract ERC20Interface {
 // ----------------------------------------------------------------------------
 contract coin is ERC20Interface {
    
-    using SafeMathLib for uint256; 
+    using SafeMath for uint256; 
 
-    address owner; 
+    address public owner; 
     bytes32 public symbol;
     bytes32 public  name;
     uint8 public decimals;
@@ -123,9 +123,8 @@ contract coin is ERC20Interface {
     }
 
  
-    mapping (address => Profile) public users;
-    mapping (bytes32 => Question) public questions;  // Overall questions key : quesId and value : Question object
-
+    mapping (address => Profile) internal users;
+    mapping (bytes32 => Question) internal questions;  // Overall questions key : quesId and value : Question object
 
     bytes32[] public questionsIndex;            // Index for above mapping
     
@@ -142,7 +141,7 @@ contract coin is ERC20Interface {
     mapping(uint8 => uint8) public work_done;
    
     
-    mapping(address => mapping(address => uint64)) allowed;
+    mapping(address => mapping(address => uint256)) allowed;
 
 
 
@@ -184,7 +183,7 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Get the token balance for account tokenOwner
     // ------------------------------------------------------------------------
-    function balanceOf(address tokenOwner) public view returns (uint256 balance) {
+    function balanceOf(address tokenOwner) public view returns (uint256) {
         return users[tokenOwner].coins;
     }
 
@@ -194,7 +193,7 @@ contract coin is ERC20Interface {
     // - Owner's account must have sufficient balance to transfer
     // - 0 value transfers are allowed
     // ------------------------------------------------------------------------
-    function transfer(address to, uint256 tokens) public returns (bool success) {
+    function transfer(address to, uint256 tokens) public returns (bool) {
 
         tokens=uint64(tokens);
 
@@ -217,9 +216,9 @@ contract coin is ERC20Interface {
     // recommends that there are no checks for the approval double-spend attack
     // as this should be implemented in user interfaces 
     // ------------------------------------------------------------------------
-    function approve(address spender, uint256 tokens) public returns (bool success) {
+    function approve(address spender, uint256 tokens) public returns (bool) {
         allowed[msg.sender][spender] = tokens;
-        Approval(msg.sender, spender, tokens);
+        emit Approval(msg.sender, spender, tokens);
         return true;
     }
 
@@ -233,7 +232,7 @@ contract coin is ERC20Interface {
     // - Spender must have sufficient allowance to transfer
     // - 0 value transfers are allowed
     // ------------------------------------------------------------------------
-    function transferFrom(address from, address to, uint256 tokens) public returns (bool success) {
+    function transferFrom(address from, address to, uint256 tokens) public returns (bool) {
         users[from].coins = uint64(uint256(users[from].coins).sub(tokens));
         allowed[from][msg.sender] = uint64(uint256(allowed[from][msg.sender]).sub(tokens));
         users[to].coins = uint64(uint256(users[to].coins).add(tokens));
@@ -246,7 +245,7 @@ contract coin is ERC20Interface {
     // Returns the amount of tokens approved by the owner that can be
     // transferred to the spender's account
     // ------------------------------------------------------------------------
-    function allowance(address tokenOwner, address spender) public view returns (uint256 remaining) {
+    function allowance(address tokenOwner, address spender) public view returns (uint256) {
         return allowed[tokenOwner][spender];
     }
 
@@ -269,14 +268,14 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Owner can transfer out any accidentally sent ERC20 tokens
     // ------------------------------------------------------------------------
-    function transferAnyERC20Token(address tokenAddress, uint256 tokens) public returns (bool success) {
+    function transferAnyERC20Token(address tokenAddress, uint256 tokens) public returns (bool) {
         
         require(msg.sender == owner);
         return ERC20Interface(tokenAddress).transfer(owner, tokens);
     }
 
-    function valueAddition (uint8 work, uint8 ipower) internal returns(uint64 va)  {
-        return uint64(work.mul(ipower));
+    function valueAddition (uint8 work, uint8 ipower) internal pure returns(uint64)  {
+        return uint64(uint256(work).mul(ipower));
     }
 
     
@@ -285,7 +284,7 @@ contract coin is ERC20Interface {
    function VAU(address user, uint8 work) internal returns(uint64){
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
-        uint64 num = uint64(offset.mul(uint256(valueAddition(work, users[user].ipower)).mul(cp))); 
+        uint64 num = uint64(uint256(offset).mul(uint256(valueAddition(work, users[user].ipower)).mul(cp))); 
         uint64 vau = uint64(uint256(num).div(totalCoinPower));
         users[user].vau += vau; 
         return vau;
@@ -304,7 +303,7 @@ contract coin is ERC20Interface {
         
     }
     
-    function diffInWeeks(uint64 time1, uint64 time2) private returns (uint64) {
+    function diffInWeeks(uint64 time1, uint64 time2) private pure returns (uint64) {
         
         uint64 diff = time2 - time1;   // diff is in milliseconds
         require(diff>0);
@@ -334,7 +333,7 @@ contract coin is ERC20Interface {
         uint i;   // iterator
         for(i=0; i<rd.length; i++)
         {
-            coins += uint64(uint256(rd[i].amount).mul(uint256(diffInWeeks(rd[i].time_of_redeem, now)).div(rd[i].span_over_weeks)));
+            coins += uint64(uint256(rd[i].amount).mul(uint256(diffInWeeks(rd[i].time_of_redeem, uint64(now))).div(rd[i].span_over_weeks)));
         }
         users[banda].coinPower -= coins;
         totalCoinPower -= coins;
@@ -480,7 +479,7 @@ contract coin is ERC20Interface {
 
         require(questions[_queId].isValid == true);     // Check if this question exist 
 
-        Answer storage answer;
+        Answer memory answer;
 
         answer.author=msg.sender;
         answer.lastModificationTimestamp = uint64(now);
@@ -521,7 +520,7 @@ contract coin is ERC20Interface {
         require(question.author == msg.sender);   // If msg.sender is the author of this question 
 
         question.que_hash = _hash;
-        question.lastModificationTimestamp = uint256(now); 
+        question.lastModificationTimestamp = uint64(now); 
     }
 
     function updateAnswer(bytes32 _queId, bytes32 _ansId, bytes32 _hash) public{
@@ -549,13 +548,13 @@ contract coin is ERC20Interface {
 
     }
     
-    function add(uint256 first,uint256 second) public view returns (uint256){
+    function add(uint256 first,uint256 second) public pure returns (uint256){
 
         return first.add(second);
 
     }
 
-    function identity(uint256 first) public constant returns (uint256){
+    function identity(uint256 first) public pure returns (uint256){
         
         return first;
         
