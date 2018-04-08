@@ -1,46 +1,46 @@
 pragma solidity 0.4.21;
-pragma experimental ABIEncoderV2; 
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
 
-
-library SafeMathLib{
-
-    function times(uint64 a, uint64 b) public pure returns (uint64){
-
-        uint64 c = a*b; 
-
-        assert (a==0 || c/a == b);
-
-        return c; 
-
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    if (a == 0) {
+      return 0;
     }
+    uint256 c = a * b;
+    assert(c / a == b);
+    return c;
+  }
 
-    function minus(uint64 a, uint64 b ) public pure returns (uint64) {
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    // uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return a / b;
+  }
 
+  /**
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
 
-        assert(b<=a);
-
-        return a-b;
-
-    }
-
-    function plus(uint64 a, uint64 b) public pure returns (uint64){
-
-        uint64 c= a+b; 
-        assert(c>=a && c>=b) ;
-        return c;
-
-    }
-
-    function divided(uint64 a, uint64 b) public pure returns (uint64) {
-        require(b > 0);
-        uint64 c = a / b;
-        return c;
-    }
-
-    function assert(bool assertion) private{
-
-        if(!assertion) throw;
-
-    }
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
 }
-
