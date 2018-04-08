@@ -1,4 +1,5 @@
 pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 pragma experimental ABIEncoderV2; 
 
 import "./SafeMathLib.sol";
@@ -123,8 +124,8 @@ contract coin is ERC20Interface {
     }
 
  
-    mapping (address => Profile) internal users;
-    mapping (bytes32 => Question) internal questions;  // Overall questions key : quesId and value : Question object
+    mapping (address => Profile) public users;
+    mapping (bytes32 => Question) public questions;  // Overall questions key : quesId and value : Question object
 
     bytes32[] public questionsIndex;            // Index for above mapping
     
@@ -260,7 +261,7 @@ contract coin is ERC20Interface {
     // ------------------------------------------------------------------------
     // Don't accept ETH
     // ------------------------------------------------------------------------
-    function () public payable {
+    function () external payable {
         revert();
     }
 
@@ -459,19 +460,20 @@ contract coin is ERC20Interface {
         }
      }  */
  
-    function addQuestion(bytes32 _hash) public{
+    function addQuestion(bytes32 _hash) public returns (bool){
 
         Question memory q;
         q.author = msg.sender; 
         q.lastModificationTimestamp = uint64(now);
         q.creationTimestamp = uint64(now); 
         q.queId = _hash;     // ipfs hash on adding question to ipfs 
-        q.que_hash = _hash;   // Initial hash 
+        q.que_hash = _hash;   // Current hash may be after edits  
         q.isValid=true; 
 
         questionsIndex.push(_hash);
         questions[_hash]=q; 
-        TVAupdate(msg.sender, work_done[2]); 
+        //TVAupdate(msg.sender, work_done[2]); 
+        return true;
         
     }
 
