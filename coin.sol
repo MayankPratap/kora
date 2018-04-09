@@ -274,6 +274,14 @@ contract coin is ERC20Interface {
         require(msg.sender == owner);
         return ERC20Interface(tokenAddress).transfer(owner, tokens);
     }
+    
+    function addUserDetails(address user,bytes32 name) public returns (bool){ // This function needs more working ...  
+        
+        require(msg.sender==user);  // Check if one who called this function is the user himself otherwise anyone will call 
+        users[user].ipower=100;
+        users[user].userName=name;  
+        return true;
+    }
 
     function valueAddition (uint8 work, uint8 ipower) internal pure returns(uint64)  {
         return uint64(uint256(work).mul(ipower));
@@ -282,12 +290,12 @@ contract coin is ERC20Interface {
     
     
 
-   function VAU(address user, uint8 work) internal returns(uint64){
+   function VAU(address user, uint8 work) public returns(uint64){
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
         uint64 num = uint64(uint256(offset).mul(uint256(valueAddition(work, users[user].ipower)).mul(cp))); 
         uint64 vau = uint64(uint256(num).div(totalCoinPower));
-        users[user].vau += vau; 
+        users[user].vau = uint64(uint256(users[user].vau).add(vau));
         return vau;
     }
     
@@ -317,8 +325,9 @@ contract coin is ERC20Interface {
         
     }
 
-    function TVAupdate(address user, uint8 work) private returns(uint64){
-        uint64 val=VAU(user, work);
+    function TVAupdate(address user, uint8 work) public returns(uint64){
+       // uint64 val=VAU(user, work);
+        uint64 val = 0; 
         TVA = uint64(uint256(TVA).add(val));
         return val; 
     }
@@ -550,18 +559,6 @@ contract coin is ERC20Interface {
 
     }
     
-    function add(uint256 first,uint256 second) public pure returns (uint256){
-
-        return first.add(second);
-
-    }
-
-    function identity(uint256 first) public pure returns (uint256){
-        
-        return first;
-        
-    }
-
 
 }
 
