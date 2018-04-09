@@ -177,7 +177,8 @@ contract coin is ERC20Interface {
     // Total supply
     // ------------------------------------------------------------------------
     function totalSupply() public view returns (uint256) {
-        return totalSupply  - users[address(0)].coins;
+        //return totalSupply - users[address(0)].coins;
+        return uint256(totalSupply).sub(users[address(0)].coins);
     }
 
 
@@ -275,15 +276,15 @@ contract coin is ERC20Interface {
         return ERC20Interface(tokenAddress).transfer(owner, tokens);
     }
     
-    function addUserDetails(address user,bytes32 name) public returns (bool){ // This function needs more working ...  
+    function addUserDetails(bytes32 name) public returns (bool){ // This function needs more working ...  
         
-        require(msg.sender==user);  // Check if one who called this function is the user himself otherwise anyone will call 
-        users[user].ipower=100;
-        users[user].userName=name;  
+        //require(msg.sender==user);  // Check if one who called this function is the user himself otherwise anyone will call 
+        users[msg.sender].ipower=100;           
+        users[msg.sender].userName=name;  
         return true;
     }
 
-    function valueAddition (uint8 work, uint8 ipower) internal pure returns(uint64)  {
+    function valueAddition (uint8 work, uint8 ipower) public pure returns(uint64)  {
         return uint64(uint256(work).mul(ipower));
     }
 
@@ -294,27 +295,28 @@ contract coin is ERC20Interface {
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
         uint64 num = uint64(uint256(offset).mul(uint256(valueAddition(work, users[user].ipower)).mul(cp))); 
+        totalCoinPower = 10;    // temp 
         uint64 vau = uint64(uint256(num).div(totalCoinPower));
         users[user].vau = uint64(uint256(users[user].vau).add(vau));
         return vau;
     }
     
-    function VAU2(address user, uint16 diff) internal returns(uint256){ 
+    function VAU2(address user, uint16 diff) public returns(uint256){ 
         
         uint64 cp = users[user].coinPower;
         uint64 offset = 10**16;
         uint64 num = uint64(uint256(offset).mul(uint256(diff).div(10).mul(cp))); 
+        totalCoinPower = 10;    // temp 
         uint64 vau = uint64(uint256(num).div(totalCoinPower));
-        users[user].vau += vau; 
-        TVA += vau; 
+        users[user].vau = uint64(uint256(users[user].vau).add(vau));
+        TVA = uint64(uint256(TVA).add(vau));
         return vau;
-        
         
     }
     
-    function diffInWeeks(uint64 time1, uint64 time2) private pure returns (uint64) {
+    function diffInWeeks(uint64 time1, uint64 time2) public pure returns (uint64) {
         
-        uint64 diff = time2 - time1;   // diff is in milliseconds
+        uint64 diff = uint64(uint256(time2).sub(time1));   // diff is in milliseconds
         require(diff>0);
         
         uint64 weeksDiff = uint64(uint256(diff).div(1000*84600*7));  
@@ -326,8 +328,7 @@ contract coin is ERC20Interface {
     }
 
     function TVAupdate(address user, uint8 work) public returns(uint64){
-       // uint64 val=VAU(user, work);
-        uint64 val = 0; 
+        uint64 val=VAU(user, work);
         TVA = uint64(uint256(TVA).add(val));
         return val; 
     }
@@ -343,12 +344,14 @@ contract coin is ERC20Interface {
         uint i;   // iterator
         for(i=0; i<rd.length; i++)
         {
-            coins += uint64(uint256(rd[i].amount).mul(uint256(diffInWeeks(rd[i].time_of_redeem, uint64(now))).div(rd[i].span_over_weeks)));
+            coins = uint64(uint256(coins).add(uint64(uint256(rd[i].amount).mul(uint256(diffInWeeks(rd[i].time_of_redeem, uint64(now))).div(rd[i].span_over_weeks)))));
         }
-        users[banda].coinPower -= coins;
-        totalCoinPower -= coins;
-        users[banda].coins += coins;
-        
+        //users[banda].coinPower -= coins;
+        users[banda].coinPower = uint64(uint256(users[banda].coinPower).sub(coins));
+        //totalCoinPower -= coins;
+        totalCoinPower = uint64(uint256(totalCoinPower).sub(coins));
+        //users[banda].coins += coins;
+        users[banda].coins = uint64(uint256(users[banda].coins).add(coins));
         
         //vote profit
         for(i=0; i< users[msg.sender].answersReactedIndex.length;++i){
@@ -362,13 +365,13 @@ contract coin is ERC20Interface {
             
             if(ai.reaction == 3){
                 
-                diffUpvotes = answer.upvotes - ai.upvotes; // assuming latest answer updates will be >= upvotes in a reaction 
+                diffUpvotes = uint16(uint256(answer.upvotes).sub(ai.upvotes)); // assuming latest answer updates will be >= upvotes in a reaction 
                 VAU2(msg.sender, diffUpvotes);
                 
                 
             }else if(ai.reaction == 4){
                 
-                diffDownvotes = answer.downvotes - ai.downvotes;
+                diffDownvotes = uint16(uint256(answer.downvotes).sub(ai.downvotes));
                 VAU2(msg.sender, diffDownvotes);
                 
             }
@@ -384,7 +387,7 @@ contract coin is ERC20Interface {
     }
 
      function coinRelease () view internal returns(uint64 coins) {
-        uint64 activity_change = uint64(uint256(LDCR).mul(totalSupply).mul(TVA-LDVA).div(LDVA).add(uint256(LDCR).mul(totalSupply)));
+        uint64 activity_change = uint64(uint256(LDCR).mul(totalSupply).mul(uint256(TVA).sub(LDVA)).div(LDVA).add(uint256(LDCR).mul(totalSupply)));
         uint64 vad = uint64(uint256(activity_change).div(1000000000000000));
         if(vad >= 10000000000 ){
             
@@ -436,7 +439,9 @@ contract coin is ERC20Interface {
 
         require(users[msg.sender].answersReacted[ansId].reaction == 0 ); 
 
-        ans.vaa += TVAupdate(msg.sender, work_done[reaction]);
+        //ans.vaa += TVAupdate(msg.sender, work_done[reaction]);
+
+        ans.vaa = uint64(uint256(ans.vaa).add(TVAupdate(msg.sender, work_done[reaction])));
 
         if(reaction == 3)
             ans.upvotes++;
@@ -453,7 +458,8 @@ contract coin is ERC20Interface {
         users[msg.sender].answersReacted[ansId]=ai; 
         
         if (reaction == 3){  //upvote and follow award money to author 
-            ans.vaa += TVAupdate(ans.author, reaction);
+            //ans.vaa += TVAupdate(ans.author, reaction);
+            ans.vaa = uint64(uint256(ans.vaa).add(TVAupdate(ans.author, reaction)));
         }
       }
       
@@ -481,7 +487,7 @@ contract coin is ERC20Interface {
 
         questionsIndex.push(_hash);
         questions[_hash]=q; 
-        //TVAupdate(msg.sender, work_done[2]); 
+        TVAupdate(msg.sender, work_done[2]); 
         return true;
         
     }
@@ -516,22 +522,20 @@ contract coin is ERC20Interface {
     function followQuestion(bytes32 _queId) public{    // We only need the question id to follow
 
         require(questions[_queId].isValid == true);     // Check if this question exist 
-
         Question storage question = questions[_queId];
-        question.followers += 1; 
-
+        //question.followers +=1;
+        question.followers = uint32(uint256(question.followers).add(1));
+        
     }
 
     function updateQuestion(bytes32 _queId, bytes32 _hash) public {
 
         require(questions[_queId].isValid==true);     // Check if this question exist       
-
         Question storage question = questions[_queId];
-
         require(question.author == msg.sender);   // If msg.sender is the author of this question 
-
         question.que_hash = _hash;
         question.lastModificationTimestamp = uint64(now); 
+        
     }
 
     function updateAnswer(bytes32 _queId, bytes32 _ansId, bytes32 _hash) public{
